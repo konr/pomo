@@ -6,7 +6,9 @@ Pomodoro timer
 * Better samples
 * Counting instead of tick
 * Log
-* data analysis
+* Data Analysis
+* How to install
+
 
 # License
 
