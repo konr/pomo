@@ -1,29 +1,49 @@
 import time
+import os
+import json
 import subprocess
+from abc import ABCMeta, abstractmethod
 
-ONE_MINUTE = 1
+ONE_MINUTE = 60
 
 def epoch():
     return int(time.time())
 
-class Config:
+class Configurable:
     def __init__(self, config):
         self._config = config
+
+class TimerHook(object):
+    __metaclass__ = ABCMeta
+
+    def __init__(self, config):
+        self._config = config
+
+    @abstractmethod
+    def start(self): pass
+
+    @abstractmethod
+    def tick(self, i, n): pass
+
+    @abstractmethod
+    def end(self): pass
+
+class Config(Configurable):
 
     def get(self, attr):
         return self._config[attr]
         
-class EAVTLogger:
-    def __init__(self, config):
-        self._config = config
+class EAVTLogger(Configurable):
 
     def __call__(self, e, a, v, t=None):
-        pass
+        t = t or epoch()
+        with open(os.environ["HOME"] + "/" + self._config.get("log_file"), "a") as f:
+            f.write(json.dumps({"e": e, "a": a, "v": v, "t": t}))
 
     def gen_entity(self, prefix):
         return "{}-{}".format(prefix, epoch())
 
-class Pomodoro:
+class Pomodoro(TimerHook):
     def __init__(self, config):
         self._logger = EAVTLogger(config)
         self._entity = self._logger.gen_entity("pomodoro")
@@ -39,9 +59,7 @@ class Pomodoro:
     def end(self):
         self._logger(self._entity, "status", "ended")
         
-class VisualAlerter:
-    def __init__(self, config):
-        self._config = config
+class VisualAlerter(TimerHook):
 
     def start(self):
         print "Starting."
@@ -52,9 +70,7 @@ class VisualAlerter:
     def end(self):
         print "Starting."
 
-class AuralAlerter:
-    def __init__(self, config):
-        self._config = config
+class AuralAlerter(TimerHook):
 
     def _play(self, file):
         subprocess.Popen([self._config.get("player"), file])
@@ -93,6 +109,7 @@ class Timer:
 if __name__ == '__main__':
     config = Config({
         "minutes": 25,
+        "log_file": ".pomo_log",
         "minute_elapsed_sound": "resources/samples/tick.wav",
         "timer_start_sound": "resources/samples/chiming pottery02.wav",
         "timer_end_sound": "resources/samples/applause.wav",
