@@ -1,0 +1,6 @@
+#!/bin/bash
+
+pomodir=$( cd "$( dirname "${BASH_SOURCE[0]}" )"/.. && pwd )
+cd $pomodir
+source .venv/bin/activate
+python pomo.py
