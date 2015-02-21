@@ -113,6 +113,73 @@ class Timer:
 
         [x.end() for x in self._hooks]
 
+class Analyser:
+    def __init__(self, config):
+        self._config = config
+        self._summary = {}
+        self._data = []
+
+    def _read(self):
+        with open(os.environ["HOME"] + "/" + self._config.get("log_file"), "r") as f:
+            data = f.read()
+        data = "[" + data.replace("}{", "},{") + "]"
+        # FIX sort by t
+        self._data = json.loads(data)
+        return self._data
+
+    def __assert_exists(self, entity):
+        data = self._summary.get(entity, {})
+        self._summary[entity] = data
+
+    def __process_status(self, datum):
+        if datum["v"] == "started":
+            self._summary[datum["e"]].update({"started": True, "started_at": datum["t"]}) # FIX backwards compat
+        elif datum["v"] == "ended":
+            self._summary[datum["e"]].update({"ended": True})
+        else:
+            raise Exception("unknown value '{}'".format(datum["v"]))
+        
+    def __process_minutes_elapsed(self, datum):
+        self._summary[datum["e"]].update({"minutes_elapsed": int(datum["v"])})
+        
+    def __process_goal(self, datum):
+        self._summary[datum["e"]].update({"goal": datum["v"]})
+
+    def __process_started_at(self, datum):
+        self._summary[datum["e"]].update({"started_at": datum["v"]})
+
+    def _parse(self, datum):
+        self.__assert_exists(datum["e"])
+        if datum["a"] == "status":
+            self.__process_status(datum)
+        elif datum["a"] == "minutes_elapsed":
+            self.__process_minutes_elapsed(datum)
+        elif datum["a"] == "goal":
+            self.__process_goal(datum)
+        elif datum["a"] == "started_at":
+            self.__process_started_at(datum)
+        else:
+            raise Exception("unknown attribute '{}'".format(datum["a"]))
+
+    def summarize(self):
+        summary = self._summary.iteritems()
+        pomodoros = len([x for x in summary])
+        summary = self._summary.iteritems()
+        not_aborted = len([k for k, v in summary if v.get("minutes_elapsed", 0) > 5])
+        summary = self._summary.iteritems()
+        ended = len([k for k, v in summary if v.get("ended")])
+        print "Attempted: {}".format(pomodoros)
+        print "Not quickly aborted (5min): {}".format(not_aborted)
+        print "Pomodoros: {}".format(ended)
+    
+    def __call__(self):
+        for datum in self._read():
+            self._parse(datum)
+        self.summarize()
+
+
+        
+
 if __name__ == '__main__':
     config = Config({
         "minutes": 25,
@@ -124,7 +191,9 @@ if __name__ == '__main__':
 
     timer = Timer(config)
 
-    if len(sys.argv) > 1:
+    if len(sys.argv) > 1 and sys.argv[1] == '-stats':
+        Analyser(config)()
+    elif len(sys.argv) > 1:
         timer(string.join(sys.argv[1:], " "))
     else:
         timer()
