@@ -2,11 +2,13 @@ import time
 import os
 import string
 import json
+from datetime import datetime
 import subprocess
 from abc import ABCMeta, abstractmethod
 import sys
 
 ONE_MINUTE = 60
+ONE_HOUR = 60*ONE_MINUTE
 
 def epoch():
     return int(time.time())
@@ -162,16 +164,21 @@ class Analyser:
             raise Exception("unknown attribute '{}'".format(datum["a"]))
 
     def summarize(self):
-        summary = self._summary.iteritems()
-        pomodoros = len([x for x in summary])
-        summary = self._summary.iteritems()
-        not_aborted = len([k for k, v in summary if v.get("minutes_elapsed", 0) > 5])
-        summary = self._summary.iteritems()
-        ended = len([k for k, v in summary if v.get("ended")])
-        print "Attempted: {}".format(pomodoros)
-        print "Not quickly aborted (5min): {}".format(not_aborted)
-        print "Pomodoros: {}".format(ended)
-    
+        now = epoch()
+
+        pomodoros_list = [v for k,v in self._summary.iteritems()]
+        not_aborted = [x for x in pomodoros_list if x.get("minutes_elapsed", 0) > 5]
+        ended = [x for x in not_aborted if x.get("ended")]
+        last_24h = [x for x in ended if x["started_at"] > (now - 24 * ONE_HOUR)]
+
+        print "Attempted: {}".format(len(pomodoros_list))
+        print "Not quickly aborted (5min): {}".format(len(not_aborted))
+        print "Pomodoros: {}".format(len(ended))
+        print "Last 24 hours: {}".format(len(last_24h))
+        
+        for p in sorted(last_24h, key=lambda x: x["started_at"]):
+            print "  - {:%H:%M}: {}".format(datetime.fromtimestamp(p.get("started_at")),p.get("goal", "???"))
+
     def __call__(self):
         for datum in self._read():
             self._parse(datum)
@@ -192,6 +199,7 @@ if __name__ == '__main__':
     timer = Timer(config)
 
     if len(sys.argv) > 1 and sys.argv[1] == '-stats':
+        # TODO divide in two executables, pomo and pomostats
         Analyser(config)()
     elif len(sys.argv) > 1:
         timer(string.join(sys.argv[1:], " "))
