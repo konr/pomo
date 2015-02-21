@@ -1,8 +1,10 @@
 import time
 import os
+import string
 import json
 import subprocess
 from abc import ABCMeta, abstractmethod
+import sys
 
 ONE_MINUTE = 60
 
@@ -49,8 +51,10 @@ class Pomodoro(TimerHook):
         self._entity = self._logger.gen_entity("pomodoro")
         self._minutes_elapsed = 0
 
-    def start(self):
+    def start(self, goal):
         self._logger(self._entity, "status", "started")
+        self._logger(self._entity, "started_at", epoch())
+        self._logger(self._entity, "goal", goal)
 
     def tick(self, i, n):
         self._minutes_elapsed += 1
@@ -61,8 +65,11 @@ class Pomodoro(TimerHook):
         
 class VisualAlerter(TimerHook):
 
-    def start(self):
-        print "Starting."
+    def start(self, goal):
+        if goal:
+            print "Good luck with '{}'!".format(goal)
+        else:
+            print "Starting."
 
     def tick(self, i, n):
         print "{}/{}".format(i, n)
@@ -75,7 +82,7 @@ class AuralAlerter(TimerHook):
     def _play(self, file):
         subprocess.Popen([self._config.get("player"), file])
 
-    def start(self):
+    def start(self, irrelevant):
         self._play(self._config.get("timer_start_sound"))
 
     def tick(self, i, n):
@@ -95,9 +102,9 @@ class Timer:
 
         self._hooks = [pomodoro, sound, video]
 
-    def __call__(self):
+    def __call__(self, goal=None):
 
-        [x.start() for x in self._hooks]
+        [x.start(goal) for x in self._hooks]
 
         n = self._config.get("minutes")
         for i in range(n):
@@ -110,8 +117,14 @@ if __name__ == '__main__':
     config = Config({
         "minutes": 25,
         "log_file": ".pomo_log",
-        "minute_elapsed_sound": "resources/samples/tick.wav",
+        "minute_elapsed_sound": "resources/samples/chiming pottery02.wav",
         "timer_start_sound": "resources/samples/chiming pottery02.wav",
         "timer_end_sound": "resources/samples/applause.wav",
         "player": "paplay"})
-    Timer(config)()
+
+    timer = Timer(config)
+
+    if len(sys.argv) > 1:
+        timer(string.join(sys.argv[1:], " "))
+    else:
+        timer()
