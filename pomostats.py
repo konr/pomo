@@ -81,16 +81,8 @@ class Analyser:
         self.summarize()
 
 
-        
-
 if __name__ == '__main__':
-    config = Config.from_env_variables({
-        "minutes": "POMO_MINUTES",
-        "log_file": "POMO_LOGFILE",
-        "minute_elapsed_sound": "POMO_MINUTE_ELAPSED_SOUND",
-        "timer_start_sound": "POMO_START_SOUND",
-        "timer_end_sound": "POMO_END_SOUND",
-        "player": "POMO_PLAYER"})
+    config = Config.from_env_variables({"log_file": "POMO_LOGFILE"})
 
     if len(sys.argv) > 1 and sys.argv[1] == '-stats':
         Analyser(config)()
