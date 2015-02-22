@@ -3,4 +3,12 @@
 pomodir=$( cd "$( dirname "${BASH_SOURCE[0]}" )"/.. && pwd )
 cd $pomodir
 source .venv/bin/activate
+
+export POMO_MINUTES=${POMO_MINUTES:-25}
+export POMO_LOGFILE=${POMO_LOGFILE:-".pomo_log"}
+export POMO_MINUTE_ELAPSED_SOUND=${POMO_MINUTE_ELAPSED_SOUND:-"resources/samples/chiming pottery02.wav"}
+export POMO_START_SOUND=${POMO_START_SOUND:-"resources/samples/chiming pottery02.wav"}
+export POMO_END_SOUND=${POMO_END_SOUND:-"resources/samples/applause.wav"}
+export POMO_PLAYER=${POMO_PLAYER:-"paplay"}
+
 python pomo.py $*
