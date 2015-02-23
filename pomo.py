@@ -115,7 +115,7 @@ if __name__ == '__main__':
 
     timer = Timer(config)
 
-    elif len(sys.argv) > 1:
+    if len(sys.argv) > 1:
         timer(string.join(sys.argv[1:], " "))
     else:
         timer()

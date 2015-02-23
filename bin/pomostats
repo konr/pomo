@@ -11,4 +11,4 @@ export POMO_START_SOUND=${POMO_START_SOUND:-"resources/samples/chiming pottery02
 export POMO_END_SOUND=${POMO_END_SOUND:-"resources/samples/applause.wav"}
 export POMO_PLAYER=${POMO_PLAYER:-"paplay"}
 
-python pomo.py -stats
+python pomostats.py
